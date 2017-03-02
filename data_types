@@ -1,0 +1,10 @@
+A  1  real array
+B  2  element array
+C  3  full matrix
+D  4  sky matrix
+E  5  integer array
+F  6  real number / int number
+G  7  unknown
+H  8  unknown
+I  9  expression
+J 10  string
