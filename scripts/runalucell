@@ -1,0 +1,33 @@
+#!/bin/bash
+
+ALUCELL_BIN=/usr/scratch/master/alucell/exe/alucell
+CASE_NAME=$1
+TMP_FOLDER_NAME=running-$CASE_NAME
+DATE_PREFIX=$(date +%Y-%m-%d-%H-%M);
+
+mkdir -p ../$TMP_FOLDER_NAME/{TMP,postpro,ensight}
+cp -r case.dat ident.dat data GRID_b* cell ../$TMP_FOLDER_NAME/;
+if [ -e dbfile_restart ]
+then
+    cp dbfile_restart ../$TMP_FOLDER_NAME/;
+fi
+
+if [ -e ASCII_cuveb_mgradpsiBn ]
+then
+    cp ASCII_cuveb_mgradpsiBn ../$TMP_FOLDER_NAME/
+fi
+
+if [ -e GRID_bint ]
+then
+    cp GRID_bint ../$TMP_FOLDER_NAME/
+fi
+
+if [ -e GRID_bext ]
+then
+    cp GRID_bext ../$TMP_FOLDER_NAME/
+fi
+
+
+(cd ../$TMP_FOLDER_NAME/; $ALUCELL_BIN 2>&1 | cat > stdout);
+mv ../$TMP_FOLDER_NAME ./simulations/$DATE_PREFIX-$CASE_NAME;
+#chmod -R a-w ./simulations/$DATE_PREFIX-$CASE_NAME;

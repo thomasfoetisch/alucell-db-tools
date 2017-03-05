@@ -1,0 +1,71 @@
+#!/bin/sh
+
+ALUCELL_CMD=alucell
+ALUCELL_OPTS=
+WD=/tmp/alucell-workspace
+FILE=""
+CWD=$(pwd)
+
+
+while [ $# -gt 0 ]
+do
+    key="$1"
+
+    case $key in
+	--debug|-d)
+	    ALUCELL_CMD="gdb ${ALUCELL_CMD}"
+	    ;;
+	--here|-h)
+	    WD=$(pwd)
+	    ;;
+	--file|-f)
+	    FILE="$2"
+	    shift
+	    ;;
+	--exec)
+	    ALUCELL_CMD=$(realpath "$2")
+	    shift
+	    ;;
+	--eval)
+	    ALUCELL_OPTS="${ALUCELL_OPTS} --eval \"${2}\""
+	    shift
+	    ;;
+	--dbfile)
+	    ALUCELL_OPTS="${ALUCELL_OPTS} --eval \"(DBFILE=\$$(realpath $2))\"";
+	    shift
+	    ;;
+	*)
+	    ALUCELL_OPTS="${ALUCELL_OPTS} ${key}"
+	    ;;
+    esac
+    shift
+done
+
+
+if [ ! -e "${WD}" ]; then
+    echo "Moving to ${WD}"
+    mkdir ${WD}
+    cd ${WD}
+    touch case.dat
+else
+    echo "Staying in ${WD}"
+    if [ ! -d ${WD} ]; then
+       echo "Path ${WD} exists but is not a directory. Aborting";
+    fi
+    cd ${WD}
+fi
+
+
+
+if [ ! "${FILE}" = "" ]; then
+    ALUCELL_OPTS="${ALUCELL_OPTS} --file ${FILE}"
+fi
+
+echo -n "Running '${ALUCELL_CMD} ${ALUCELL_OPTS}'\n\n"
+sh -c "${ALUCELL_CMD} ${ALUCELL_OPTS}"
+
+
+cd $CWD
+if [ ! "${CWD}" = "${WD}" ]; then
+    rm -rf /tmp/alucell-workspace
+fi

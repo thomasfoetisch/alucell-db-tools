@@ -1,0 +1,4 @@
+#!/bin/bash
+
+RUN_FOLDER=$1;
+tail -f $RUN_FOLDER/stdout;

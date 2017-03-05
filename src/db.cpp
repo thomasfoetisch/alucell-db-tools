@@ -2,6 +2,7 @@
 #include <iostream>
 #include <iomanip>
 #include <set>
+#include <map>
 
 #include "alucell_legacy_database.hpp"
 
