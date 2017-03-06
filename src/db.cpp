@@ -333,13 +333,13 @@ void show_variable(int argc, char* argv[]) {
 
       switch (db.get_variable_type(id)) {
       case alucell::data_type::real_array:
-	std::cout << "real number array" << std::endl;;
+	std::cout << name << ": real number array" << std::endl;;
 	show_array<double>(&db, id);
 	break;
 	
       case alucell::data_type::int_array:
       case alucell::data_type::element_array:
-	std::cout << "integer/element array" << std::endl;;
+	std::cout << name << ": integer/element array" << std::endl;;
 	show_array<int>(&db, id);
 	break;
 	
@@ -353,7 +353,7 @@ void show_variable(int argc, char* argv[]) {
 
       case alucell::data_type::real_number:
 	{
-	  std::cout << "real number" << std::endl;
+	  std::cout << name << ": real number" << std::endl;
 	  alucell::variable::number v(&db, id);
 	  std::cout << "  value: " << v.get_value() << std::endl;
 	}
@@ -361,7 +361,7 @@ void show_variable(int argc, char* argv[]) {
 	
       case alucell::data_type::expression:
 	{
-	  std::cout << "expression" << std::endl;
+	  std::cout << name << ": expression" << std::endl;
 	  alucell::variable::expression v(&db, id);
 	  alucell::expression_decoder d(&v);
 	  std::cout << "  domain dimension: " << d.get_input_rank() << std::endl;
@@ -371,7 +371,7 @@ void show_variable(int argc, char* argv[]) {
 	
       case alucell::data_type::string:
 	{
-	  std::cout << "character string" << std::endl;
+	  std::cout << name << ": character string" << std::endl;
 	  alucell::variable::string v(&db, id);
 	  std::cout << "  value: '" << v.get_value() << "'" << std::endl;
 	  std::cout << "  length: " << v.get_value().size() << std::endl;
