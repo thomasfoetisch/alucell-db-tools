@@ -1,17 +1,19 @@
 
 CXX = g++
 CXXFLAGS = -g -std=c++11
+LDFLAGS = -g
 
 BIN_DIR = ~/.local/bin/
 
 BIN = bin/db
 OBJECTS = build/db.o
 
-.PHONY = clean install
+.PHONY = all clean install
 
-all: bin/db
+all: $(BIN)
 
 bin/db: build/db.o
+	$(CXX) $(LDFLAGS) -o $@ $<
 
 build/db.o: src/db.cpp \
 src/string_utils.hpp \
@@ -24,5 +26,5 @@ clean:
 	rm -f $(OBJECTS)
 	rm -f $(BIN)
 
-install:
+install: bin/db
 	cp bin/db $(BIN_DIR)
