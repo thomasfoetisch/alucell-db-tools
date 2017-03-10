@@ -4,9 +4,7 @@
 #include <set>
 #include <map>
 
-#include "alucell_legacy_database.hpp"
-
-#include "alucell_legacy_variable.hpp"
+#include "alucelldb.hpp"
 
 
 class database_index {
