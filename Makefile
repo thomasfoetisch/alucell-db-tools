@@ -6,25 +6,38 @@ LDFLAGS = -g
 BIN_DIR = ~/.local/bin/
 
 BIN = bin/db
-OBJECTS = build/db.o
+OBJECTS = build/src/db.o
 
 .PHONY = all clean install
 
-all: $(BIN)
+HEADERS = include/libalucelldb/alucell_datatypes.hpp \
+	  include/libalucelldb/alucell_legacy_database.hpp \
+	  include/libalucelldb/alucell_legacy_variable.hpp \
+	  include/libalucelldb/string_utils.hpp
 
-bin/db: build/db.o
-	$(CXX) $(LDFLAGS) -o $@ $<
+$(HEADERS): include/libalucelldb/%: src/%
+	@echo [INSTALL] $(<:src/%=%)
+	@install -m 0644 -D $< $@
 
-build/db.o: src/db.cpp \
-src/string_utils.hpp \
-src/alucell_datatypes.hpp \
-src/alucell_legacy_database.hpp \
-src/alucell_legacy_variable.hpp
-	$(CXX) $(CXXFLAGS) -c -o $@ $<
+all: $(BIN) $(HEADERS)
+
+$(OBJECTS): build/%.o: %.cpp
+	@echo [CXX] $<
+	@mkdir --parents $(dir $@)
+	@$(CXX) $(CXXFLAGS) -c -o $@ $<
+
+$(BIN): bin/%: build/src/%.o
+	@echo [LD] $@
+	@$(CXX) $(LDFLAGS) -o $@ $<
+
+$(BIN_TEST): bin/%: build/test/%.o
+	@echo [LD] $@
+	@$(CXX) $(LDFLAGS) -o $@ $<
 
 clean:
 	rm -f $(OBJECTS)
 	rm -f $(BIN)
+	rm -rf include/*
 
 install: bin/db
 	cp bin/db $(BIN_DIR)
