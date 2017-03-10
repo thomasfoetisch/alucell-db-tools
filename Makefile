@@ -13,13 +13,15 @@ OBJECTS = build/src/db.o
 HEADERS = include/libalucelldb/alucell_datatypes.hpp \
 	  include/libalucelldb/alucell_legacy_database.hpp \
 	  include/libalucelldb/alucell_legacy_variable.hpp \
-	  include/libalucelldb/string_utils.hpp
+	  include/libalucelldb/string_utils.hpp \
+	  include/libalucelldb/alucelldb.hpp
+
+all: $(BIN) $(HEADERS)
 
 $(HEADERS): include/libalucelldb/%: src/%
 	@echo [INSTALL] $(<:src/%=%)
 	@install -m 0644 -D $< $@
 
-all: $(BIN) $(HEADERS)
 
 $(OBJECTS): build/%.o: %.cpp
 	@echo [CXX] $<
