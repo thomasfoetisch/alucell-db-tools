@@ -1,45 +1,52 @@
 
-CXX = g++
-CXXFLAGS = -g -std=c++11
-LDFLAGS = -g
+.SUFFIX:
 
-BIN_DIR = ~/.local/bin/
+include config.mk
 
-BIN = bin/db
-OBJECTS = build/src/db.o
+OBJECTS = $(patsubst %.cpp,build/%.o,$(SOURCES))
+DEPS = $(patsubst %.cpp,build/%.deps,$(SOURCES))
 
-.PHONY = all clean install
+.PHONY = all deps clean install
 
-HEADERS = include/libalucelldb/alucell_datatypes.hpp \
-	  include/libalucelldb/alucell_legacy_database.hpp \
-	  include/libalucelldb/alucell_legacy_variable.hpp \
-	  include/libalucelldb/string_utils.hpp \
-	  include/libalucelldb/alucelldb.hpp
+all: $(BIN) $(LIB)
 
-all: $(BIN) $(HEADERS)
+-include $(DEPS)
 
 $(HEADERS): include/libalucelldb/%: src/%
-	@echo [INSTALL] $(<:src/%=%)
+	@echo "[INST]" $(<:src/%=%)
 	@install -m 0644 -D $< $@
 
 
 $(OBJECTS): build/%.o: %.cpp
-	@echo [CXX] $<
+	@echo "[CXX] " $@
 	@mkdir --parents $(dir $@)
 	@$(CXX) $(CXXFLAGS) -c -o $@ $<
 
-$(BIN): bin/%: build/src/%.o
-	@echo [LD] $@
-	@$(CXX) $(LDFLAGS) -o $@ $<
+$(DEPS): build/%.deps: %.cpp
+	@echo "[DEPS]" $@
+	@mkdir --parents $(dir $@)
+	@$(DEPS_BIN) -std=c++11 -MM -MT build/$*.o $< > $@
+	@$(DEPS_BIN) -std=c++11 -MM -MT build/$*.deps $< >> $@
 
-$(BIN_TEST): bin/%: build/test/%.o
-	@echo [LD] $@
-	@$(CXX) $(LDFLAGS) -o $@ $<
+$(BIN): bin/%:
+	@echo "[LD]  " $@
+	@$(CXX) $(LDFLAGS) -o $@ $^
+
+$(LIB): lib/%:
+	@echo "[AR]  " $@
+	@$(AR) $(ARFLAGS) $@ $^
+
+deps: $(DEPS)
 
 clean:
-	rm -f $(OBJECTS)
-	rm -f $(BIN)
-	rm -rf include/*
+	@rm -f $(OBJECTS)
+	@rm -f $(DEPS)
+	@rm -f $(BIN)
+	@rm -f $(LIB)
+	@rm -rf include/*
+	@rm -rf build/*
 
-install: bin/db
-	cp bin/db $(BIN_DIR)
+install: $(BIN) $(HEADERS) $(LIB)
+	cp $(BIN) $(PREFIX)/$(BIN_DIR)
+	cp -r include/* $(PREFIX)/$(INCLUDE_DIR)
+	cp $(LIB) $(PREFIX)/$(LIB_DIR)/
