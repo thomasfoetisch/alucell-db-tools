@@ -2,3 +2,4 @@
 include/*
 build/*
 bin/*
+lib/*
