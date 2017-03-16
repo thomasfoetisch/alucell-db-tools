@@ -7,6 +7,7 @@ OBJECTS = $(patsubst %.cpp,build/%.o,$(SOURCES))
 DEPS = $(patsubst %.cpp,build/%.deps,$(SOURCES))
 
 .PHONY = all deps clean install
+.DEFAULT_GOAL = all
 
 all: $(BIN) $(LIB) $(HEADERS)
 
