@@ -3,6 +3,8 @@
 #include <iomanip>
 #include <set>
 #include <map>
+#include <cctype>
+#include <algorithm>
 
 #include "alucell_legacy_database.hpp"
 
@@ -140,6 +142,7 @@ void list_dbfile_meshes(int argc, char* argv[]) {
 
   bool list_scalar(false), list_nodal(false), list_elemental(false);
   std::set<std::string> meshes_to_list;
+  std::set<unsigned int> vector_ranks_to_list;
   while (argc) {
     if (argv[0] == std::string("-e")) {
       list_elemental = true;
@@ -151,6 +154,13 @@ void list_dbfile_meshes(int argc, char* argv[]) {
       list_scalar = true;
       list_nodal = true;
       list_elemental = true;
+    } else if (argv[0][0] == '-'
+               and std::all_of<const char*, int (*)(int)>(argv[0] + 1,
+                                                          argv[0] + std::strlen(argv[0]),
+                                                          std::isdigit)) {
+      vector_ranks_to_list.insert(std::strtoul(argv[0] + 1,
+                                                 NULL,
+                                                 10));
     } else {
       meshes_to_list.insert(argv[0]);
     }
@@ -222,10 +232,13 @@ void list_dbfile_meshes(int argc, char* argv[]) {
 	case alucell::data_type::real_array:
 	  if (list_nodal or list_elemental) {
 	    alucell::variable::array<double> a(&db, i);
-	    if (a.get_size() == nodes.get_size() and list_nodal)
-	      std::cout << "  nodal variable: " << var_name.substr(mesh_name.size() + 1) << std::endl;
-	    if (a.get_size() == elements.get_size() and list_elemental)
-	      std::cout << "  elemental variable: " << var_name.substr(mesh_name.size() + 1) << std::endl;
+            if (vector_ranks_to_list.size() == 0 or
+                vector_ranks_to_list.count(a.get_components())) {
+              if (a.get_size() == nodes.get_size() and list_nodal)
+                std::cout << "  nodal variable: " << var_name.substr(mesh_name.size() + 1) << std::endl;
+              if (a.get_size() == elements.get_size() and list_elemental)
+                std::cout << "  elemental variable: " << var_name.substr(mesh_name.size() + 1) << std::endl;
+            }
 	  }
 	  break;
 	  
