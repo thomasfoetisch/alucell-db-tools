@@ -6,35 +6,8 @@
 #include <cctype>
 #include <algorithm>
 
-#include "alucell_legacy_database.hpp"
+#include "alucelldb.hpp"
 
-#include "alucell_legacy_variable.hpp"
-
-
-class database_index {
-public:
-  database_index (alucell::database_raw_access* db) {
-    for (unsigned int id(0); id < db->get_variables_number(); ++id)
-      index[db->get_variable_name(id)] = id;
-  }
-
-  unsigned int get_variable_id(const std::string& name) {
-    auto it(index.find(name));
-
-    if (it == index.end())
-      throw std::string("Variable not found.");
-
-    return it->second;
-  }
-
-  bool exists(const std::string& name) {
-    auto it(index.find(name));
-    return it != index.end();
-  }
-
-private:
-  std::map<std::string, unsigned int> index;
-};
 
 const char* matrix_message =
   "Full matrix data type is long gone, dude. If you really wanna \n"
@@ -62,7 +35,7 @@ void dump_variable_value(int argc, char* argv[]) {
     ++argv;
   
     alucell::database_raw_access db(filename);
-    database_index index(&db);
+    alucell::database_index index(&db);
   
     while (argc > 0) {
       const std::string name(argv[0]);
@@ -169,7 +142,7 @@ void list_dbfile_meshes(int argc, char* argv[]) {
   }
 
   alucell::database_raw_access db(dbfile_name);
-  database_index index(&db);
+  alucell::database_index index(&db);
 
   std::set<std::string> potential_mesh_names;
   for (unsigned int i(0); i < db.get_variables_number(); ++i) {
@@ -338,7 +311,7 @@ void show_variable(int argc, char* argv[]) {
     ++argv;
 
     alucell::database_raw_access db(dbfile_name);
-    database_index index(&db);
+    alucell::database_index index(&db);
 
     while (argc > 0) {
       const std::string name(argv[0]);
