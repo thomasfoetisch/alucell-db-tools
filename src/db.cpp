@@ -209,7 +209,7 @@ void list_dbfile_meshes(int argc, char* argv[]) {
                 vector_ranks_to_list.count(a.get_components())) {
               if (a.get_size() == nodes.get_size() and list_nodal)
                 std::cout << "  nodal variable: " << var_name.substr(mesh_name.size() + 1) << std::endl;
-              if (a.get_size() == elements.get_size() and list_elemental)
+              else if (a.get_size() == elements.get_size() and list_elemental)
                 std::cout << "  elemental variable: " << var_name.substr(mesh_name.size() + 1) << std::endl;
             }
 	  }
