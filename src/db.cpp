@@ -6,8 +6,31 @@
 #include <cctype>
 #include <algorithm>
 
+#include <unistd.h>
+
 #include "alucelldb.hpp"
 
+const char* usage_message =
+  "USAGE: db <action> <db_filename> [<action-options> ...]\n"
+  "  Inspect and manipulate the content of alucell database files.\n"
+  "\n"
+  "The db command is a toolbox, where each tool is selected by giving\n"
+  "the appropriate <action> keyword. <action> can be one of 'ls', 'dump',\n"
+  "'mesh' and 'show'. Each action needs a dbfile to work with, and\n"
+  "possibly some additional parameters.\n"
+  "See 'dbfile <action> <db_filename> -h for more information about the\n"
+  "action <action>.\n"
+  "\n"
+  "Notes on the syntax used in the documentation.\n"
+  "All the parameters on the command lines are mandatory, unless specified\n"
+  "differently. Optional options that may appear at most once are written\n"
+  "between square brackets (e.g. [-n]). Options that can appear zero or more\n"
+  "times are written with a trailing Kleen star '*' (e.g. -<n>*), and options\n"
+  "that can appear at least once or more times use the trailing '+' (e.g. \n"
+  "<var_name>+). Keywords between angle brackets (e.g. <action>) are\n"
+  "metasynctactical variables to denote a set of possible values. For example\n"
+  "the syntax <db_filename> is used to denote any possible textual\n"
+  "representation of a valid path to a dbfile.";
 
 const char* matrix_message =
   "Full matrix data type is long gone, dude. If you really wanna \n"
@@ -22,6 +45,95 @@ const char* skymatrix_message =
   "stored in memory, and implement that. You can start by reading ds.f \n"
   "and vpiter.f. Good luck!";
 
+const char* meshes_help_message =
+  "USAGE: db mesh <db_filename> [-a] [-n] [-e] [-s] -<n>* <mesh_name>*\n"
+  "  List meshes that are defined in the dbfile, and associated variables.\n"
+  "\n"
+  "Without any options, only the names of the detected meshes are listed. If\n"
+  "some <mesh_name> are provided, only thoses meshes will be displayed, if they\n"
+  "exist. No error will occur if they don't.\n"
+  "The 'mesh' action accept the following options:\n"
+  "  -n           List the variables defined on the nodes of the mesh.\n"
+  "  -e           List the variables defined on the elements of the mesh.\n"
+  "  -s           List the scalar variable that are associated with the mesh.\n"
+  "  -a           Imply the options -n -e -s.\n"
+  "  -<n>         List only the nodal or elemental variables defined on the mesh\n"
+  "               which have <n> components. This option can occur multiple times.\n"
+  "               <n> is expected to be any valid integer number in base 10,\n"
+  "               e.g. 1, 3, 16 or 42."
+  "  -h           Show this message.\n"
+  "  <mesh_name>  Restrict the displayed meshes to the <mesh_name> specified.\n"
+  "               Multiples <mesh_name> can be specified.\n"
+  "\n"
+  "Examples\n"
+  "  $ db mesh dbfile_stat\n"
+  "     List all the meshes detected in the file 'dbfile_stat'.\n\n"
+  "  $ db mesh dbfile_stat cuveb -a\n"
+  "     List all the variables (scalar, nodal, elemental) defined on the mesh 'cuveb'.\n\n"
+  "  $ db mesh dbfile_stat cuveb -a -3 -16\n"
+  "     List all the scalar variables, and all the nodal and elemental variables which have\n"
+  "     exactly 3 components or 16 components (typically vectors in R^3).\n\n"
+  "  $ db mesh dbfile_stat POINT0$(seq 1 9) -e\n"
+  "     Assuming a Bash shell environment, list the elemental variables of the meshes 'POINT01'\n"
+  "     'POINT02', ..., 'POINT09' detected in the file 'dbfile_stat'.\n";
+
+const char* dump_help_message =
+  "USAGE: db dump <db_filename> [-h] <var_name>+\n"
+  "  Show the content of the variable names given on the \n"
+  "  command line. Minimal formatting is performed to make\n"
+  "  the content readable.\n"
+  "\n"
+  "The output obviously depends on the type of the variable \n"
+  "dumped. For the real numbers, the value is printed in ascii,\n"
+  "up to 12 digits. For real, integer and element arrays, all the\n"
+  "components are printed, one row per line, separated by spaces. \n"
+  "Strings are dumped without further interpretation or conversion.\n"
+  "For expressions, a disassembly of the bytecode is displayed, which\n"
+  "can allow, in principle, evaluation of the function by hand.\n"
+  "\n"
+  "The matrix and sky_matrix are not yet supported.";
+
+const char* list_help_message =
+  "USAGE: db ls <db_filename> [-t <datatype>]*\n"
+  "  List the variables in the 'db_filename' file.\n"
+  "\n"
+  "Without options, all the variables are listed, alongside with its\n"
+  "datatype and size in bytes. Possible datatypes are 'real_array',\n"
+  "'element_array', 'matrix', 'sky_matrix', 'int_array', 'real_number',\n"
+  "'expression' and 'string'.\n"
+  "\n"
+  "The 'ls' action accepts the following options:\n"
+  "  -t <datatype>  Restrict the listed variable to this datatype only.\n"
+  "                 Multiple occurences of this option can be used. In this\n"
+  "                 case, only variable whose datatype is one of the datatypes\n"
+  "                 specified with the -t option are listed.\n"
+  "  -h             Print this message.\n";
+
+const char* show_help_message =
+  "USAGE: db show <db_filename> <var_name>+\n"
+  "  Show a human readable summary of the content of the variable names given \n"
+  "  on the command line.\n";
+
+
+inline
+void check_file_read_accessibility(const std::string& filename, const std::string& error_msg) {
+  if (access(filename.c_str(), R_OK) != 0)
+    switch (errno) {
+    case EACCES:
+      throw error_msg + " (you don't have read access rights on this file)";
+    case ELOOP:
+      throw error_msg + " (too many symbolic links)";
+    case ENAMETOOLONG:
+      throw error_msg + " (filename is too long)";
+    case ENOTDIR:
+      throw error_msg + " (regular file used as a file path component)";
+    case ENOENT:
+      throw error_msg + " (one of the components of the path does not exist)";
+    default:
+      throw error_msg;
+    }
+}
+
 void dump_variable_value(int argc, char* argv[]) {
   if (argc == 0)
     throw std::string("Expecting database filename.");
@@ -29,18 +141,31 @@ void dump_variable_value(int argc, char* argv[]) {
   if (argc == 1) {
     throw std::string("Expecting variable name(s).");
   } else {
-    const std::string filename(argv[0]);
+    const std::string db_filename(argv[0]);
+    check_file_read_accessibility(db_filename, db_filename + " is not accessible");
     
     --argc;
     ++argv;
-  
-    alucell::database_raw_access db(filename);
-    alucell::database_index index(&db);
-  
+
+    std::vector<std::string> variables_to_dump;
     while (argc > 0) {
-      const std::string name(argv[0]);
+      if (argv[0] == std::string("-h")) {
+	std::cout << dump_help_message << std::endl;
+	return;
+      } else {
+	variables_to_dump.push_back(argv[0]);
+      }
+
+      --argc;
+      ++argv;
+    }
+  
+    alucell::database_raw_access db(db_filename);
+    alucell::database_index index(&db);
+
+    for (const auto& name: variables_to_dump) {
       const unsigned int id(index.get_variable_id(name));
-	
+
       switch (db.get_variable_type(id)) {
       case alucell::data_type::real_array:
 	{
@@ -109,7 +234,9 @@ void list_dbfile_meshes(int argc, char* argv[]) {
   if (argc < 1)
     throw std::string("Wrong number of arguments");
 
-  const std::string dbfile_name(argv[0]);
+  const std::string db_filename(argv[0]);
+  check_file_read_accessibility(db_filename, db_filename + " is not accessible");
+
   --argc;
   ++argv;
 
@@ -117,7 +244,10 @@ void list_dbfile_meshes(int argc, char* argv[]) {
   std::set<std::string> meshes_to_list;
   std::set<unsigned int> vector_ranks_to_list;
   while (argc) {
-    if (argv[0] == std::string("-e")) {
+    if (argv[0] == std::string("-h")) {
+      std::cout << meshes_help_message << std::endl;
+      return;
+    } else if (argv[0] == std::string("-e")) {
       list_elemental = true;
     } else if (argv[0] == std::string("-s")) {
       list_scalar = true;
@@ -141,7 +271,7 @@ void list_dbfile_meshes(int argc, char* argv[]) {
     ++argv;
   }
 
-  alucell::database_raw_access db(dbfile_name);
+  alucell::database_raw_access db(db_filename);
   alucell::database_index index(&db);
 
   std::set<std::string> potential_mesh_names;
@@ -230,16 +360,13 @@ void list_dbfile_meshes(int argc, char* argv[]) {
 }
 
 
-void extract_variables_to_dbfile(int argc, char* argv[]) {
-  std::cout << "TODO" << std::endl;
-}
-
-
 void list_dbfile_content(int argc, char* argv[]) {
   if (argc < 1)
     throw std::string("ls: wrong number of arguments.");
 
   const std::string db_filename(argv[0]);
+  check_file_read_accessibility(db_filename, db_filename + " is not accessible");
+
   --argc;
   ++argv;
   
@@ -253,6 +380,9 @@ void list_dbfile_content(int argc, char* argv[]) {
       included_types.insert(t);
       argc -= 2;
       argv += 2;
+    } else if (argv[0] == std::string("-h")) {
+      std::cout << list_help_message << std::endl;
+      return;
     } else {
       throw std::string("Wrong argument.");
     }
@@ -306,15 +436,30 @@ void show_variable(int argc, char* argv[]) {
   if (argc == 1) {
     throw std::string("Expecting variable name(s).");
   } else {
-    const std::string dbfile_name(argv[0]);
+    const std::string db_filename(argv[0]);
+    check_file_read_accessibility(db_filename, db_filename + " is not accessible");
+
     --argc;
     ++argv;
 
-    alucell::database_raw_access db(dbfile_name);
+    std::vector<std::string> variables_to_show;
+    while (argc > 0) {
+      if (argv[0] == std::string("-h")) {
+	std::cout << show_help_message << std::endl;
+	return;
+      } else {
+	variables_to_show.push_back(argv[0]);
+      }
+
+      --argc;
+      ++argv;
+    }
+
+
+    alucell::database_raw_access db(db_filename);
     alucell::database_index index(&db);
 
-    while (argc > 0) {
-      const std::string name(argv[0]);
+    for (const auto& name: variables_to_show) {
       const unsigned int id(index.get_variable_id(name));
 
       switch (db.get_variable_type(id)) {
@@ -367,11 +512,12 @@ void show_variable(int argc, char* argv[]) {
       default:
 	throw std::string("Unknown type.");
       }
-
-      --argc;
-      ++argv;
     }
   }
+}
+
+void print_usage() {
+  std::cout << usage_message << std::endl;
 }
 
 void parse_action(int argc, char* argv[]) {
@@ -383,27 +529,14 @@ void parse_action(int argc, char* argv[]) {
     dump_variable_value(argc - 1, argv + 1);
   } else if (std::string("mesh") == argv[0]) {
     list_dbfile_meshes(argc - 1, argv + 1);
-  } else if (std::string("extract") == argv[0]) {
-    extract_variables_to_dbfile(argc - 1, argv + 1);
+  } else if (std::string("-h") == argv[0]){
+    print_usage();
   } else {
     throw std::string("Unknown action ") + argv[0];
   }
 }
 
-void print_usage() {
-  static const char* message =
-    "USAGE: db <action> [<args>] <dbfile> [<dbfile> ...]\n"
-    "  Inspect and manipulate the content of alucell database files.\n"
-    "\n"
-    "The db command is a toolbox, where each tool is selected by giving\n"
-    "the appropriate <action> keyword. <action> can be one of 'ls', 'dump', 'mesh', 'show', 'extract'.";
-  
-  std::cout << message << std::endl;
-}
-
-
 int main(int argc, char *argv[]) {
-
   try {
     if (argc >= 2)
       parse_action(argc - 1, argv + 1);
