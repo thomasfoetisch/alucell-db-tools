@@ -15,17 +15,18 @@ all: $(BIN) $(LIB) $(HEADERS)
 
 $(HEADERS): include/libalucelldb/%: src/%
 	@echo "[INST]" $(<:src/%=%)
-	@install -m 0644 -D $< $@
+	@$(MKDIR) $(MKDIRFLAGS) $(dir $@)
+	@cp $< $(dir $@)
 
 
 $(OBJECTS): build/%.o: %.cpp
 	@echo "[CXX] " $@
-	@mkdir --parents $(dir $@)
+	@mkdir -p $(dir $@)
 	@$(CXX) $(CXXFLAGS) -c -o $@ $<
 
 $(DEPS): build/%.deps: %.cpp
 	@echo "[DEPS]" $@
-	@mkdir --parents $(dir $@)
+	@mkdir -p $(dir $@)
 	@$(DEPS_BIN) -std=c++11 -MM -MT build/$*.o $< > $@
 	@$(DEPS_BIN) -std=c++11 -MM -MT build/$*.deps $< >> $@
 
