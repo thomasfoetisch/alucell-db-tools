@@ -21,7 +21,7 @@ namespace alucell {
     
     class string: public basic_variable {
     public:
-      string(database_raw_access* db, unsigned int id) {
+      string(database_read_access* db, unsigned int id) {
 	std::vector<char> buffer(db->get_variable_size(id), 0);
 	db->read_data_from_database(id, reinterpret_cast<double*>(&buffer[0]));
 	std::size_t string_length(static_cast<std::size_t>(*reinterpret_cast<double*>(&buffer[0])));
@@ -42,7 +42,7 @@ namespace alucell {
     
     class number: public basic_variable {
     public:
-      number(database_raw_access* db, unsigned int id) {
+      number(database_read_access* db, unsigned int id) {
 	db->read_data_from_database(id, &value);
       }
       
@@ -59,7 +59,7 @@ namespace alucell {
     template<typename T>
     class array: public basic_variable {
     public:
-      array(database_raw_access* db, unsigned int id) {
+      array(database_read_access* db, unsigned int id) {
 	buffer = new unsigned char[db->get_variable_size(id)];
 	db->read_data_from_database(id, buffer);
 	values = reinterpret_cast<T*>(buffer + 2 * sizeof(double));
@@ -92,7 +92,7 @@ namespace alucell {
     
     class expression: public basic_variable {
     public:
-      expression(database_raw_access* db, unsigned int id) {
+      expression(database_read_access* db, unsigned int id) {
 	buffer.resize(db->get_variable_size(id));
 	db->read_data_from_database(id, &buffer[0]);
       }

@@ -3,7 +3,7 @@
 
 namespace alucell {
 
-  void database_raw_access::read_header() {
+  void database_read_access::read_header() {
     // Note: From here we assume that the file is open and readable,
     //       and that the state is clean (variablesInfos and blockInfos
     //       reinitialized).
@@ -65,17 +65,17 @@ namespace alucell {
   }
 
 
-  database_raw_access::database_raw_access(): block_infos(8, 0) {}
+  database_read_access::database_read_access(): block_infos(8, 0) {}
   
   /*
    * Constuctor
    */
-  database_raw_access::database_raw_access(const std::string& _filename)
+  database_read_access::database_read_access(const std::string& _filename)
     : filename(), dbfile(), index(), block_infos(8, 0) {
     open(_filename);
   }
 
-  std::pair<unsigned int, unsigned int> database_raw_access::read_array_size_infos(unsigned int offset) {
+  std::pair<unsigned int, unsigned int> database_read_access::read_array_size_infos(unsigned int offset) {
     double meta[2] = {0.};
 
     dbfile.seekg(offset, std::ios::beg);
@@ -85,7 +85,7 @@ namespace alucell {
 			  static_cast<unsigned int>(meta[1]));
   }
 
-  void database_raw_access::open(const std::string& _filename) {
+  void database_read_access::open(const std::string& _filename) {
     close();
     
     /*
@@ -100,7 +100,7 @@ namespace alucell {
     read_header();
   }
 
-  void database_raw_access::close() {
+  void database_read_access::close() {
     /*
      * Clear state:
      */
@@ -110,7 +110,7 @@ namespace alucell {
     std::fill(block_infos.begin(), block_infos.end(), 0);
   }
 
-  void database_raw_access::dump_database_infos(std::ostream& stream) {
+  void database_read_access::dump_database_infos(std::ostream& stream) {
     /*
      * Dump the info block content:
      */

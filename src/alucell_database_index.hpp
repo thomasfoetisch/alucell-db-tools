@@ -11,7 +11,7 @@ namespace alucell {
 
 class database_index {
 public:
-  database_index (alucell::database_raw_access* db) {
+  database_index (alucell::database_read_access* db) {
     for (unsigned int id(0); id < db->get_variables_number(); ++id)
       index[db->get_variable_name(id)] = id;
   }

@@ -11,7 +11,7 @@
 
 namespace alucell {
 
-  class database_raw_access {
+  class database_read_access {
   private:
     struct database_index_item {
       std::string name;  // Variable name
@@ -45,9 +45,9 @@ namespace alucell {
     /*
      * Constuctors
      */
-    database_raw_access();
+    database_read_access();
     
-    database_raw_access(const std::string& _filename);
+    database_read_access(const std::string& _filename);
 
     void open(const std::string& _filename);
 
@@ -67,7 +67,7 @@ namespace alucell {
     }
     unsigned int get_variables_number() const { return index.size(); }
   };
-  
+
 }
 
 #endif

@@ -160,7 +160,7 @@ void dump_variable_value(int argc, char* argv[]) {
       ++argv;
     }
   
-    alucell::database_raw_access db(db_filename);
+    alucell::database_read_access db(db_filename);
     alucell::database_index index(&db);
 
     for (const auto& name: variables_to_dump) {
@@ -271,7 +271,7 @@ void list_dbfile_meshes(int argc, char* argv[]) {
     ++argv;
   }
 
-  alucell::database_raw_access db(db_filename);
+  alucell::database_read_access db(db_filename);
   alucell::database_index index(&db);
 
   std::set<std::string> potential_mesh_names;
@@ -388,7 +388,7 @@ void list_dbfile_content(int argc, char* argv[]) {
     }
   }
 
-  alucell::database_raw_access db(db_filename);
+  alucell::database_read_access db(db_filename);
   for (unsigned int i(0); i < db.get_variables_number(); ++i) {
     if (included_types.size() == 0
 	or (included_types.count(db.get_variable_type(i)) > 0))
@@ -411,7 +411,7 @@ std::string print_memory_size(unsigned long s) {
 }
 
 template<typename T>
-void show_array(alucell::database_raw_access* db, unsigned int id) {
+void show_array(alucell::database_read_access* db, unsigned int id) {
   alucell::variable::array<T> v(db, id);
   std::cout << "  rows: " << v.get_size() << std::endl;
   std::cout << "  components: " << v.get_components() << std::endl;
@@ -456,7 +456,7 @@ void show_variable(int argc, char* argv[]) {
     }
 
 
-    alucell::database_raw_access db(db_filename);
+    alucell::database_read_access db(db_filename);
     alucell::database_index index(&db);
 
     for (const auto& name: variables_to_show) {
