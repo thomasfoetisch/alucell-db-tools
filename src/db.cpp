@@ -16,7 +16,7 @@ const char* usage_message =
   "\n"
   "The db command is a toolbox, where each tool is selected by giving\n"
   "the appropriate <action> keyword. <action> can be one of 'ls', 'dump',\n"
-  "'mesh' and 'show'. Each action needs a dbfile to work with, and\n"
+  "'mesh', 'info' and 'show'. Each action needs a dbfile to work with, and\n"
   "possibly some additional parameters.\n"
   "See 'dbfile <action> <db_filename> -h for more information about the\n"
   "action <action>.\n"
@@ -46,7 +46,7 @@ const char* skymatrix_message =
   "and vpiter.f. Good luck!";
 
 const char* meshes_help_message =
-  "USAGE: db mesh <db_filename> [-a] [-n] [-e] [-s] -<n>* <mesh_name>*\n"
+  "USAGE: db mesh <db_filename> [-h] [-a] [-n] [-e] [-s] -<n>* <mesh_name>*\n"
   "  List meshes that are defined in the dbfile, and associated variables.\n"
   "\n"
   "Without any options, only the names of the detected meshes are listed. If\n"
@@ -94,7 +94,7 @@ const char* dump_help_message =
   "The matrix and sky_matrix are not yet supported.";
 
 const char* list_help_message =
-  "USAGE: db ls <db_filename> [-t <datatype>]*\n"
+  "USAGE: db ls <db_filename> [-h] [-t <datatype>]*\n"
   "  List the variables in the 'db_filename' file.\n"
   "\n"
   "Without options, all the variables are listed, alongside with its\n"
@@ -110,9 +110,13 @@ const char* list_help_message =
   "  -h             Print this message.\n";
 
 const char* show_help_message =
-  "USAGE: db show <db_filename> <var_name>+\n"
+  "USAGE: db show <db_filename> [-h] <var_name>+\n"
   "  Show a human readable summary of the content of the variable names given \n"
   "  on the command line.\n";
+
+const char* info_help_message =
+  "USAGE: db info <db_filename> [-h]\n"
+  "  Show the content of the infoblock stored in the dbfile.\n";
 
 
 inline
@@ -360,6 +364,31 @@ void list_dbfile_meshes(int argc, char* argv[]) {
 }
 
 
+void database_info(int argc, char* argv[]) {
+  if (argc < 1)
+    throw std::string("info: wrong number of arguments.");
+
+  const std::string db_filename(argv[0]);
+  check_file_read_accessibility(db_filename, db_filename + " is not accessible");
+
+  --argc;
+  ++argv;
+
+  while (argc) {
+    if (argv[0] == std::string("-h")) {
+      std::cout << info_help_message << std::endl;
+      return;
+    } else {
+      throw std::string("Wrong argument.");
+    }
+    --argc;
+    ++argv;
+  }
+
+  alucell::database_read_access db(db_filename);
+  db.dump_database_infos(std::cout);
+}
+
 void list_dbfile_content(int argc, char* argv[]) {
   if (argc < 1)
     throw std::string("ls: wrong number of arguments.");
@@ -529,6 +558,8 @@ void parse_action(int argc, char* argv[]) {
     dump_variable_value(argc - 1, argv + 1);
   } else if (std::string("mesh") == argv[0]) {
     list_dbfile_meshes(argc - 1, argv + 1);
+  } else if (std::string("info") == argv[0]) {
+    database_info(argc - 1, argv + 1);
   } else if (std::string("-h") == argv[0]){
     print_usage();
   } else {
