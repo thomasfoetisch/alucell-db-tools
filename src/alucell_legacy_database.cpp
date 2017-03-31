@@ -94,7 +94,7 @@ namespace alucell {
     dbfile.open(_filename.c_str(), std::ios::in | std::ios::binary);
     
     if(!dbfile)
-      throw std::string("[error] read_header(filename): Unable to read dbfile.");
+      throw std::string("[error] database_read_access::open(filename): Unable to open dbfile.");
 
     filename = _filename;
     read_header();
