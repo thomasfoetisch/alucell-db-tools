@@ -109,6 +109,7 @@ const char* list_help_message =
   "                 specified with the -t option are listed.\n"
   "  -v             Verbose ouput. For each variable, the datatype as well as it's\n"
   "                 size in byte is printed.\n"
+  "  -H             Human readable units are used to print variable sizes.\n"
   "  -h             Print this message.\n";
 
 const char* show_help_message =
@@ -276,25 +277,27 @@ void extract_dbfile_variables(int argc, char* argv[]) {
   alucell::database_write_access output_db(output_db_filename);
   
   for (unsigned int i(0); i < db.get_variables_number(); ++i) {
-    switch(db.get_variable_type(i)) {
-    case alucell::data_type::real_array:
-      alucell::variable::array<double>(&db, i).insert_into(&output_db, db.get_variable_name(i));
-      break;
-    case alucell::data_type::element_array:
-    case alucell::data_type::int_array:
-      alucell::variable::array<int>(&db, i).insert_into(&output_db, db.get_variable_name(i));
-      break;
-    case alucell::data_type::real_number:
-      alucell::variable::number(&db, i).insert_into(&output_db, db.get_variable_name(i));
-      break;
-    case alucell::data_type::expression:
-      alucell::variable::expression(&db, i).insert_into(&output_db, db.get_variable_name(i));
-      break;
-    case alucell::data_type::string:
-      alucell::variable::string(&db, i).insert_into(&output_db, db.get_variable_name(i));
-      break;
-    default:
-      break;
+    if (variables_to_extract.count(db.get_variable_name(i)) != 0) {
+      switch(db.get_variable_type(i)) {
+      case alucell::data_type::real_array:
+	alucell::variable::array<double>(&db, i).insert_into(&output_db, db.get_variable_name(i));
+	break;
+      case alucell::data_type::element_array:
+      case alucell::data_type::int_array:
+	alucell::variable::array<int>(&db, i).insert_into(&output_db, db.get_variable_name(i));
+	break;
+      case alucell::data_type::real_number:
+	alucell::variable::number(&db, i).insert_into(&output_db, db.get_variable_name(i));
+	break;
+      case alucell::data_type::expression:
+	alucell::variable::expression(&db, i).insert_into(&output_db, db.get_variable_name(i));
+	break;
+      case alucell::data_type::string:
+	alucell::variable::string(&db, i).insert_into(&output_db, db.get_variable_name(i));
+	break;
+      default:
+	break;
+      }
     }
   }
 }
@@ -455,51 +458,6 @@ void database_info(int argc, char* argv[]) {
   db.dump_database_infos(std::cout);
 }
 
-void list_dbfile_content(int argc, char* argv[]) {
-  if (argc < 1)
-    throw std::string("ls: wrong number of arguments.");
-
-  const std::string db_filename(argv[0]);
-  check_file_read_accessibility(db_filename, db_filename + " is not accessible");
-
-  --argc;
-  ++argv;
-
-  bool verbose_output(false);
-  std::set<alucell::data_type> included_types;
-  while (argc) {
-    if (argv[0] == std::string("-t") and argc >= 2) {
-      alucell::data_type t(alucell::pretty_name_to_data_type(argv[1]));
-      if (t == alucell::data_type::unknown)
-	throw std::string("Invalid datatype name.");
-      
-      included_types.insert(t);
-      argc -= 2;
-      argv += 2;
-    } else if (argv[0] == std::string("-v")) {
-      verbose_output = true;
-    } else if (argv[0] == std::string("-h")) {
-      std::cout << list_help_message << std::endl;
-      return;
-    } else {
-      throw std::string("Wrong argument.");
-    }
-  }
-
-  alucell::database_read_access db(db_filename);
-  for (unsigned int i(0); i < db.get_variables_number(); ++i) {
-    if (included_types.size() == 0
-	or (included_types.count(db.get_variable_type(i)) > 0)) {
-      if (verbose_output)
-	std::cout << std::setw(14) << std::left << alucell::pretty_data_type(db.get_variable_type(i))
-		  << std::setw(10) << std::right << db.get_variable_size(i)
-		  << "  " << db.get_variable_name(i) << std::endl;
-      else
-	std::cout << db.get_variable_name(i) << std::endl;
-    }
-  }
-}
-
 std::string print_memory_size(unsigned long s) {
   const char* prefixes[] = {" byte", " Kilobyte", " Megabyte", " Gigabyte", " Terabyte", " Exabyte", " Petabyte"};
 
@@ -511,6 +469,63 @@ std::string print_memory_size(unsigned long s) {
 
   return std::to_string(s) + prefixes[prefix_id];
 }
+
+void list_dbfile_content(int argc, char* argv[]) {
+  if (argc < 1)
+    throw std::string("ls: wrong number of arguments.");
+
+  const std::string db_filename(argv[0]);
+  check_file_read_accessibility(db_filename, db_filename + " is not accessible");
+
+  --argc;
+  ++argv;
+
+  bool verbose_output(false);
+  bool human_units(false);
+  std::set<alucell::data_type> included_types;
+  while (argc) {
+    if (argv[0] == std::string("-t") and argc >= 2) {
+      alucell::data_type t(alucell::pretty_name_to_data_type(argv[1]));
+      if (t == alucell::data_type::unknown)
+	throw std::string("Invalid datatype name.");
+      
+      included_types.insert(t);
+      argc -= 1;
+      argv += 1;
+    } else if (argv[0] == std::string("-v")) {
+      verbose_output = true;
+    } else if (argv[0] == std::string("-H")) {
+      human_units = true;
+    } else if (argv[0] == std::string("-h")) {
+      std::cout << list_help_message << std::endl;
+      return;
+    } else {
+      throw std::string("Wrong argument.");
+    }
+    
+    --argc;
+    ++argv;
+  }
+
+  alucell::database_read_access db(db_filename);
+  for (unsigned int i(0); i < db.get_variables_number(); ++i) {
+    if (included_types.size() == 0
+	or (included_types.count(db.get_variable_type(i)) > 0)) {
+      if (verbose_output) {
+	std::string size;
+	if (human_units) size = print_memory_size(db.get_variable_size(i));
+	else size = std::to_string(db.get_variable_size(i));
+	
+	std::cout << std::setw(14) << std::left << alucell::pretty_data_type(db.get_variable_type(i))
+		  << std::setw(13) << std::right << size
+		  << "  " << db.get_variable_name(i) << std::endl;
+      } else {
+	std::cout << db.get_variable_name(i) << std::endl;
+      }
+    }
+  }
+}
+
 
 template<typename T>
 void show_array(alucell::database_read_access* db, unsigned int id) {

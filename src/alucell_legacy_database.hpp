@@ -144,6 +144,7 @@ namespace alucell {
       const unsigned int required_slots_number(name.size()/32 + 1);
       name.resize(required_slots_number * 4 * sizeof(double), ' ');
 
+      if (false)
       std::cout << "Writing variable " << name
 		<< ", will require " << required_slots_number
 		<< " slots." << std::endl;
@@ -160,6 +161,7 @@ namespace alucell {
       dbfile.write(const_cast<char*>(reinterpret_cast<const char*>(&size_in_block)), sizeof(size_in_block));
       lengths_buffer_offset += required_slots_number * sizeof(size);
 
+      if (false)
       std::cout << "  writing the length (" << size_in_block << ") of the var at "
 		<< dbfile.tellp() - static_cast<std::ios::pos_type>(sizeof(size)) << std::endl;
 
@@ -175,6 +177,7 @@ namespace alucell {
       dbfile.write(reinterpret_cast<char*>(&last_block_offset_in_block), sizeof(last_block_offset_in_block));
       offsets_buffer_offset += required_slots_number * sizeof(last_block_offset);
 
+      if (false)
       std::cout << "  writing the data offset (" << last_block_offset_in_block << ") of the var at "
 		<< dbfile.tellp() - static_cast<std::ios::pos_type>(sizeof(last_block_offset)) << std::endl;
 
@@ -188,6 +191,7 @@ namespace alucell {
       names_buffer_offset += name.size();
       used_slots_number += required_slots_number;
 
+      if (false)
       std::cout << "  writing the name of the var at "
 		<< dbfile.tellp() - static_cast<std::ios::pos_type>(name.size()) << std::endl;
 
@@ -199,6 +203,7 @@ namespace alucell {
       dbfile.write(reinterpret_cast<char*>(data), size);
       last_block_offset += size;
 
+      if (false)
       std::cout << "  writing the data of the var at "
 		<< dbfile.tellp() - static_cast<std::ios::pos_type>(size)
 		<< std::endl;
@@ -224,6 +229,7 @@ namespace alucell {
       dbfile.seekp(info_block_file_offset * sizeof(double));
       dbfile.write(reinterpret_cast<char*>(&info_block[0]), 8 * sizeof(int));
 
+      if (false)
       std::cout << "  writing the info block of the dbfile at "
 		<< dbfile.tellp() - static_cast<std::ios::pos_type>(8 * sizeof(int))
 		<< std::endl
