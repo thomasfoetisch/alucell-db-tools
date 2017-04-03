@@ -273,8 +273,6 @@ void extract_dbfile_variables(int argc, char* argv[]) {
     throw std::string("extract_dbfile_variables: mandatory '-o' option missing.");
 
   alucell::database_read_access db(db_filename);
-  alucell::database_index index(&db);
-  
   alucell::database_write_access output_db(output_db_filename);
   
   for (unsigned int i(0); i < db.get_variables_number(); ++i) {
