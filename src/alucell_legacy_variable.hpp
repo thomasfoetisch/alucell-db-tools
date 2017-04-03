@@ -21,22 +21,36 @@ namespace alucell {
     
     class string: public basic_variable {
     public:
-      string(database_read_access* db, unsigned int id) {
-	std::vector<char> buffer(db->get_variable_size(id), 0);
+      string(database_read_access* db, unsigned int id):
+	buffer(db->get_variable_size(id), 0),
+	string_length(0) {
+	/*
+	 *  See file ds.f:25 to get interpretation of data
+	 */
 	db->read_data_from_database(id, reinterpret_cast<double*>(&buffer[0]));
-	std::size_t string_length(static_cast<std::size_t>(*reinterpret_cast<double*>(&buffer[0])));
-
-	value = std::string(buffer.begin() + 2 * sizeof(double),
-			    buffer.begin() + 2 * sizeof(double) + string_length);
+	string_length = static_cast<std::size_t>(*reinterpret_cast<double*>(&buffer[0]));
       }
       
-      const std::string& get_value() const { return value; }
+      std::string get_value() const {
+	return std::string(buffer.begin() + 2 * sizeof(double),
+			   buffer.begin() + 2 * sizeof(double) + string_length);
+      }
 
-      unsigned int get_length() { return value.size(); }
-      void get_data(void* dst) { std::memcpy(dst, &value[0], get_length()); }
+      unsigned int get_length() { return string_length; }
+      void get_data(void* dst) { std::memcpy(dst, &buffer[2 * sizeof(double)], get_length()); }
+
+      void insert_into(database_write_access* db, const std::string& name) {
+	std::string item_name;
+	item_name += alucell::type_id_to_type_char(alucell::data_type_to_type_id(alucell::data_type::string));
+	item_name += '_';
+	item_name += name;
+
+	db->insert(name, alucell::data_type::string, &buffer[0], buffer.size());
+      }
       
     private:
-      std::string value;
+      std::vector<char> buffer;
+      std::size_t string_length;
     };
 
     
@@ -51,17 +65,28 @@ namespace alucell {
       unsigned int get_length() { return sizeof(value); }
       void get_data(void* dst) { std::memcpy(dst, &value, get_length()); }
 
+      void insert_into(database_write_access* db, const std::string& name) {
+	db->insert(name, alucell::data_type::real_number, &value, sizeof(value));
+      }
+      
     private:
       double value;
     };
 
-    
+
+    template<typename T> struct array_legacy_datatype;
+    template<> struct array_legacy_datatype<int> { static const alucell::data_type value = alucell::data_type::int_array; };
+    template<> struct array_legacy_datatype<double> { static const alucell::data_type value = alucell::data_type::real_array; };
+
     template<typename T>
     class array: public basic_variable {
     public:
       array(database_read_access* db, unsigned int id) {
-	buffer = new unsigned char[db->get_variable_size(id)];
+	buffer_length = db->get_variable_size(id);
+	buffer = new unsigned char[buffer_length];
+	
 	db->read_data_from_database(id, buffer);
+
 	values = reinterpret_cast<T*>(buffer + 2 * sizeof(double));
 	size = *reinterpret_cast<double*>(buffer);
 	components = *reinterpret_cast<double*>(buffer + sizeof(double));
@@ -78,8 +103,13 @@ namespace alucell {
       unsigned int get_length() { return size * components * sizeof(T); }
       void get_data(void* dst) { std::memcpy(dst, &values, get_length()); }
 
+      void insert_into(database_write_access* db, const std::string& name) {
+	db->insert(name, array_legacy_datatype<T>::value, buffer, buffer_length);
+      }
+      
     private:
       unsigned char* buffer;
+      std::size_t buffer_length;
       unsigned int size;
       unsigned int components;
       T* values;
@@ -99,6 +129,11 @@ namespace alucell {
 
       unsigned int get_length() { return buffer.size(); }
       void get_data(void* dst) { std::memcpy(dst, &buffer[0], get_length()); }
+
+      void insert_into(database_write_access* db, const std::string& name) {
+	db->insert(name, alucell::data_type::expression, &buffer[0], buffer.size());
+      }
+      
     private:
       std::vector<unsigned char> buffer;
     };

@@ -124,7 +124,20 @@ namespace alucell {
       names_buffer_offset = 0;
     }
 
+    static std::string prepend_type_char(const std::string& name, alucell::data_type t) {
+      std::string item_name(1, alucell::type_id_to_type_char(alucell::data_type_to_type_id(t)));
+      item_name += '_';
+      item_name += name;
+      return  item_name;
+    }
+    
     void insert(std::string name, const alucell::data_type t, void* const data, const int size) {
+      /*
+       * Prepend the type character code at the front of the name
+       */
+      name = prepend_type_char(name, t);
+
+      
       /*
        *  Resize the name to a multiple of the name slot's size
        */

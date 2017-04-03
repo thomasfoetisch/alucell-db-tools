@@ -16,8 +16,8 @@ const char* usage_message =
   "\n"
   "The db command is a toolbox, where each tool is selected by giving\n"
   "the appropriate <action> keyword. <action> can be one of 'ls', 'dump',\n"
-  "'mesh', 'info' and 'show'. Each action needs a dbfile to work with, and\n"
-  "possibly some additional parameters.\n"
+  "'mesh', 'info', 'extract' and 'show'. Each action needs a dbfile to work"
+  "with, and possibly some additional parameters.\n"
   "See 'dbfile <action> <db_filename> -h for more information about the\n"
   "action <action>.\n"
   "\n"
@@ -107,6 +107,8 @@ const char* list_help_message =
   "                 Multiple occurences of this option can be used. In this\n"
   "                 case, only variable whose datatype is one of the datatypes\n"
   "                 specified with the -t option are listed.\n"
+  "  -v             Verbose ouput. For each variable, the datatype as well as it's\n"
+  "                 size in byte is printed.\n"
   "  -h             Print this message.\n";
 
 const char* show_help_message =
@@ -118,6 +120,10 @@ const char* info_help_message =
   "USAGE: db info <db_filename> [-h]\n"
   "  Show the content of the infoblock stored in the dbfile.\n";
 
+
+const char* extract_help_message =
+  "USAGE: db extract <db_filename> -o <output_db_filename> <var_name>+\n"
+  "  Create a new dbfile from the list of variables <var_name>.";
 
 inline
 void check_file_read_accessibility(const std::string& filename, const std::string& error_msg) {
@@ -229,6 +235,68 @@ void dump_variable_value(int argc, char* argv[]) {
 
       --argc;
       ++argv;
+    }
+  }
+}
+
+void extract_dbfile_variables(int argc, char* argv[]) {
+  if (argc < 1)
+    throw std::string("Wrong number of arguments");
+
+  const std::string db_filename(argv[0]);
+  check_file_read_accessibility(db_filename, db_filename + " is not accessible");
+
+  --argc;
+  ++argv;
+
+  std::set<std::string> variables_to_extract;
+  std::string output_db_filename;
+  while (argc) {
+    if (argv[0] == std::string("-o")) {
+      if (argc < 2)
+	throw std::string("extract dbfile variables: expected parameter following '-o' option.");
+      output_db_filename = argv[1];
+      --argc;
+      ++argv;
+    } else if (argv[0] == std::string("-h")) {
+      std::cout << extract_help_message << std::endl;
+      return;
+    } else {
+      variables_to_extract.insert(argv[0]);
+    }
+    
+    --argc;
+    ++argv;
+  }
+
+  if (output_db_filename.size() == 0)
+    throw std::string("extract_dbfile_variables: mandatory '-o' option missing.");
+
+  alucell::database_read_access db(db_filename);
+  alucell::database_index index(&db);
+  
+  alucell::database_write_access output_db(output_db_filename);
+  
+  for (unsigned int i(0); i < db.get_variables_number(); ++i) {
+    switch(db.get_variable_type(i)) {
+    case alucell::data_type::real_array:
+      alucell::variable::array<double>(&db, i).insert_into(&output_db, db.get_variable_name(i));
+      break;
+    case alucell::data_type::element_array:
+    case alucell::data_type::int_array:
+      alucell::variable::array<int>(&db, i).insert_into(&output_db, db.get_variable_name(i));
+      break;
+    case alucell::data_type::real_number:
+      alucell::variable::number(&db, i).insert_into(&output_db, db.get_variable_name(i));
+      break;
+    case alucell::data_type::expression:
+      alucell::variable::expression(&db, i).insert_into(&output_db, db.get_variable_name(i));
+      break;
+    case alucell::data_type::string:
+      alucell::variable::string(&db, i).insert_into(&output_db, db.get_variable_name(i));
+      break;
+    default:
+      break;
     }
   }
 }
@@ -398,7 +466,8 @@ void list_dbfile_content(int argc, char* argv[]) {
 
   --argc;
   ++argv;
-  
+
+  bool verbose_output(false);
   std::set<alucell::data_type> included_types;
   while (argc) {
     if (argv[0] == std::string("-t") and argc >= 2) {
@@ -409,6 +478,8 @@ void list_dbfile_content(int argc, char* argv[]) {
       included_types.insert(t);
       argc -= 2;
       argv += 2;
+    } else if (argv[0] == std::string("-v")) {
+      verbose_output = true;
     } else if (argv[0] == std::string("-h")) {
       std::cout << list_help_message << std::endl;
       return;
@@ -420,10 +491,14 @@ void list_dbfile_content(int argc, char* argv[]) {
   alucell::database_read_access db(db_filename);
   for (unsigned int i(0); i < db.get_variables_number(); ++i) {
     if (included_types.size() == 0
-	or (included_types.count(db.get_variable_type(i)) > 0))
-      std::cout << std::setw(14) << std::left << alucell::pretty_data_type(db.get_variable_type(i))
-		<< std::setw(10) << std::right << db.get_variable_size(i)
-		<< "  " << db.get_variable_name(i) << std::endl;
+	or (included_types.count(db.get_variable_type(i)) > 0)) {
+      if (verbose_output)
+	std::cout << std::setw(14) << std::left << alucell::pretty_data_type(db.get_variable_type(i))
+		  << std::setw(10) << std::right << db.get_variable_size(i)
+		  << "  " << db.get_variable_name(i) << std::endl;
+      else
+	std::cout << db.get_variable_name(i) << std::endl;
+    }
   }
 }
 
@@ -560,6 +635,8 @@ void parse_action(int argc, char* argv[]) {
     list_dbfile_meshes(argc - 1, argv + 1);
   } else if (std::string("info") == argv[0]) {
     database_info(argc - 1, argv + 1);
+  } else if (std::string("extract") == argv[0]) {
+    extract_dbfile_variables(argc - 1, argv + 1);
   } else if (std::string("-h") == argv[0]){
     print_usage();
   } else {

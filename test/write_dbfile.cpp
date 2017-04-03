@@ -26,20 +26,9 @@ int main(int argc, char *argv[]) {
 
 
   /*
-   * Create the database item name. In the dbfile, the
-   * name is concatenated with with the variable's type character
-   * code.
-   */
-  std::string item_name;
-  item_name += alucell::type_id_to_type_char(alucell::data_type_to_type_id(alucell::data_type::real_array));
-  item_name += '_';
-  item_name += name;
-
-
-  /*
    *  Insert and close
    */
-  db.insert(item_name, alucell::data_type::real_array, &values[0], values.size() * sizeof(double));
+  db.insert(name, alucell::data_type::real_array, &values[0], values.size() * sizeof(double));
   db.close();
   
   return 0;
