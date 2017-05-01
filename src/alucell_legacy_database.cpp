@@ -59,8 +59,8 @@ namespace alucell {
 	  item(trimmed(vector_name),
 	       lengths_buffer[offset] * static_cast<unsigned int>(sizeof(double)),
 	       (offsets_buffer[offset] - 1) * static_cast<unsigned int>(sizeof(double)));
-	
-	index.push_back(item);
+	if (not item.is_deleted())
+	  index.push_back(item);
       }
   }
 

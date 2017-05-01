@@ -29,6 +29,18 @@ namespace alucell {
 	type = type_id_to_data_type(type_char_to_type_id(variable_id[0]));
 	name = std::string(variable_id.begin() + 2, variable_id.end());
       }
+
+      bool is_deleted() const {
+	if (name.size() > 4) {
+	  if (name[name.size() - 1] == -1
+	      and name[name.size() - 2] == -1
+	      and name[name.size() - 3] == -1
+	      and name[name.size() - 4] == -1)
+	    return true;
+	}
+	
+	return false;
+      }
     };
 
     /*
