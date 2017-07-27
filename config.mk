@@ -16,7 +16,8 @@ LIB_DIR = lib/
 
 SOURCES = src/db.cpp \
           src/alucell_legacy_database.cpp \
-	  test/test_string.cpp
+	  test/string.cpp \
+	  test/write_dbfile.cpp
 
 HEADERS = include/libalucelldb/alucell_datatypes.hpp \
 	  include/libalucelldb/alucell_legacy_database.hpp \
@@ -24,10 +25,11 @@ HEADERS = include/libalucelldb/alucell_datatypes.hpp \
 	  include/libalucelldb/string_utils.hpp \
 	  include/libalucelldb/alucelldb.hpp
 
-BIN = bin/db bin/test_string
+BIN = bin/db bin/test_string bin/test_write_dbfile
 
 bin/db: build/src/db.o build/src/alucell_legacy_database.o
-bin/test_string: build/test/test_string.o
+bin/test_string: build/test/string.o
+bin/test_write_dbfile: build/test/write_dbfile.o build/src/alucell_legacy_database.o
 
 LIB = lib/libalucelldb.a
 
