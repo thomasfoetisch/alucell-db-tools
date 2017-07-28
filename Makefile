@@ -13,7 +13,7 @@ all: $(BIN) $(LIB) $(HEADERS)
 
 -include $(DEPS)
 
-$(HEADERS): include/libalucelldb/%: src/%
+$(HEADERS): include/alucelldb/%: src/%
 	@echo "[INST]" $(<:src/%=%)
 	@$(MKDIR) $(MKDIRFLAGS) $(dir $@)
 	@cp $< $(dir $@)

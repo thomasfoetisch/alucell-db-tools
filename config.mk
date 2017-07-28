@@ -19,11 +19,12 @@ SOURCES = src/db.cpp \
 	  test/string.cpp \
 	  test/write_dbfile.cpp
 
-HEADERS = include/libalucelldb/alucell_datatypes.hpp \
-	  include/libalucelldb/alucell_legacy_database.hpp \
-	  include/libalucelldb/alucell_legacy_variable.hpp \
-	  include/libalucelldb/string_utils.hpp \
-	  include/libalucelldb/alucelldb.hpp
+HEADERS = include/alucelldb/alucell_datatypes.hpp \
+	  include/alucelldb/alucell_legacy_database.hpp \
+	  include/alucelldb/alucell_legacy_variable.hpp \
+	  include/alucelldb/string_utils.hpp \
+	  include/alucelldb/alucell_database_index.hpp \
+	  include/alucelldb/alucelldb.hpp
 
 BIN = bin/db bin/test_string bin/test_write_dbfile
 

@@ -1,6 +1,8 @@
 #ifndef _ALUCELL_DATATYPES_H_
 #define _ALUCELL_DATATYPES_H_
 
+#include <string>
+
 namespace alucell {
 
   enum class data_type { unknown = 0,

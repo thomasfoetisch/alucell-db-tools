@@ -101,7 +101,9 @@ namespace alucell {
       }
 
       unsigned int get_length() { return size * components * sizeof(T); }
-      void get_data(void* dst) { std::memcpy(dst, &values, get_length()); }
+      void get_data(void* dst) {
+	std::copy(values, values + size * components, reinterpret_cast<T*>(dst));
+      }
 
       void insert_into(database_write_access* db, const std::string& name) {
 	db->insert(name, array_legacy_datatype<T>::value, buffer, buffer_length);
@@ -306,8 +308,7 @@ namespace alucell {
     std::vector<double> argument_stack, computation_stack;
     
     std::string function_name_buffer;
-    std::size_t nj, mj;
-    double tmp1, tmp2;
+    int nj, mj;
     bool done;
 
     void print_stacks() {
@@ -367,7 +368,7 @@ namespace alucell {
     }
   
     void prepare_arguments() {
-      for (std::size_t i(0); i < nj; ++i) {
+      for (int i(0); i < nj; ++i) {
 	double value(computation_stack.back());
 	computation_stack.pop_back();
       
@@ -411,9 +412,9 @@ namespace alucell {
   stack_machine::stack_machine()
     : builtins(),
       call_stack(), instruction_pointers(),
-      computation_stack(), argument_stack(),
+      argument_stack(), computation_stack(), 
       function_name_buffer(32, ' '),
-      nj(0), mj(0), tmp1(0.0), tmp2(0.0),
+      nj(0), mj(0),
       done(false) {
     builtins[1] = &stack_machine::unary_op<operators::unary_function_wrapper<std::sin> >;
     builtins[2] = &stack_machine::unary_op<operators::unary_function_wrapper<std::cos> >;
@@ -524,8 +525,8 @@ namespace alucell {
     void dump_bytecode_assembly(std::ostream& stream) {
 
       std::string function_name_buffer(32, ' ');
-      std::size_t nj(0), mj(0), icode(0);
-      double value(0.0);
+      int nj(0), mj(0);
+      long int icode(0);
     
       double* instruction(&bytecode[0]);
       while (instruction < &bytecode[0] + bytecode.size()) {
