@@ -13,7 +13,7 @@ all: $(BIN) $(LIB) $(HEADERS)
 
 -include $(DEPS)
 
-$(HEADERS): include/alucelldb/%: src/%
+$(HEADERS): include/$(PKG_NAME)/%: src/%
 	@echo "[INST]" $(<:src/%=%)
 	@$(MKDIR) $(MKDIRFLAGS) $(dir $@)
 	@cp $< $(dir $@)
@@ -21,12 +21,12 @@ $(HEADERS): include/alucelldb/%: src/%
 
 $(OBJECTS): build/%.o: %.cpp
 	@echo "[CXX] " $@
-	@mkdir -p $(dir $@)
+	@$(MKDIR) $(MKDIRFLAGS) $(dir $@)
 	@$(CXX) $(CXXFLAGS) -c -o $@ $<
 
 $(DEPS): build/%.deps: %.cpp
 	@echo "[DEPS]" $@
-	@mkdir -p $(dir $@)
+	@$(MKDIR) $(MKDIRFLAGS) $(dir $@)
 	@$(DEPS_BIN) -std=c++11 -MM -MT build/$*.o $< > $@
 	@$(DEPS_BIN) -std=c++11 -MM -MT build/$*.deps $< >> $@
 
@@ -53,19 +53,25 @@ install-dev: install-header install-lib
 install-all: install-bin install-lib install-header
 
 install-bin: $(BIN)
-	@echo [INST] $@
+	@echo "[CP]  " $@
+ifneq ($(BIN),)
 	@$(MKDIR) $(MKDIRFLAGS) $(PREFIX)/$(BIN_DIR)
 	@cp $(BIN) $(PREFIX)/$(BIN_DIR)
+endif
 
 install-header: $(HEADERS)
-	@echo [INST] $@
+	@echo "[CP]  " $@
+ifneq ($(HEADERS),)
 	@$(MKDIR) $(MKDIRFLAGS) $(PREFIX)/$(INCLUDE_DIR)
 	@cp -r include/* $(PREFIX)/$(INCLUDE_DIR)
+endif
 
 install-lib: $(LIB)
-	@echo [INST] $@
+	@echo "[CP]  " $@
+ifneq ($(LIB),)
 	@$(MKDIR) $(MKDIRFLAGS) $(PREFIX)/$(LIB_DIR)
 	@cp $(LIB) $(PREFIX)/$(LIB_DIR)/
+endif
 
 print-%:
 	@echo $*=$($*)

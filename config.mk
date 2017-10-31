@@ -1,18 +1,20 @@
 CXX = g++
 DEPS_BIN = g++
-CXXFLAGS = -g -std=c++11
-LDFLAGS = -g
+CXXFLAGS = -O2 -std=c++11
+LDFLAGS = -O2
 LDLIBS = 
 AR = ar
 ARFLAGS = rc
 MKDIR = mkdir
 MKDIRFLAGS = -p
 
-PREFIX = ~/.local/
+PREFIX = $(HOME)/.local/
 BIN_DIR = bin/
 INCLUDE_DIR = include/
 LIB_DIR = lib/
 
+
+PKG_NAME = alucelldb
 
 SOURCES = src/db.cpp \
           src/alucell_legacy_database.cpp \
